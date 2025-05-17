@@ -8,7 +8,7 @@ import (
 	"codeflare/pkg/utils"
 	"fmt"
 	"log"
-
+	"net/http"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/echo/v4"
 )
@@ -36,8 +36,14 @@ func main() {
 
 	e := echo.New()
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"https://www.nymbus.xyz/", "https://nymbus.xyz/", "http://localhost:5174"},
-		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
+		AllowOrigins: []string{"*"},
+		AllowMethods: []string{http.MethodGet, http.MethodPut, http.MethodPost, http.MethodDelete, http.MethodOptions, http.MethodHead, http.MethodPatch},
+		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization, 
+			echo.HeaderAccessControlAllowOrigin, echo.HeaderAccessControlAllowHeaders, "Referer", "User-Agent", "sec-ch-ua", 
+			"sec-ch-ua-mobile", "sec-ch-ua-platform"},
+		ExposeHeaders: []string{echo.HeaderContentLength, echo.HeaderContentType},
+		AllowCredentials: true,
+		MaxAge: 86400, // Allow preflight cache for 24 hours
 	}))
 	e.HideBanner = true
 	e.Use(utils.CustomLogger())
