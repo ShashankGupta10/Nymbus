@@ -19,9 +19,11 @@ type Config struct {
 }
 
 func LoadConfig() *Config {
-	err := godotenv.Load()
-	if err != nil {
-		fmt.Println("Error loading environment file")
+	if os.Getenv("RAILWAY_ENVIRONMENT") == "" {
+		err := godotenv.Load()
+		if err != nil {
+			fmt.Println("No .env file found or error loading it, using environment variables directly")
+		}
 	}
 
 	value, err := strconv.Atoi(os.Getenv("SERVER_PORT"))

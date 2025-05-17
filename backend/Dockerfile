@@ -1,12 +1,25 @@
-FROM node:20.11.0-alpine3.14
-FROM golang:1.22-alpine
-
-RUN mkdir -p /app
+FROM golang:1.22-alpine AS builder
 WORKDIR /app
 
-COPY . .
+COPY go.mod go.sum ./
+RUN go mod download
 
-RUN go build -o main ./cmd/main.go
-EXPOSE 8080
+COPY . .
+RUN go build -o main ./cmd
+
+
+
+FROM node:22.15.0-alpine
+
+RUN npm install -g pnpm
+RUN apk add --no-cache curl unzip bash
+RUN apk add --no-cache curl unzip
+RUN curl -fsSL https://bun.sh/install | bash
+
+WORKDIR /app
+COPY --from=builder /app/main .
+
+ENV PORT=8080
+EXPOSE $PORT
 
 CMD ["./main"]
