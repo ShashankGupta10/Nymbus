@@ -36,7 +36,7 @@ func main() {
 
 	e := echo.New()
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"https://www.nymbus.xyz", "https://nymbus.xyz", "http://localhost:5174"},
+		AllowOrigins: []string{"https://www.nymbus.xyz/", "https://nymbus.xyz/", "http://localhost:5174"},
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
 	}))
 	e.HideBanner = true
