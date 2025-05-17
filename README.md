@@ -139,6 +139,12 @@ This project is licensed under the MIT License. See the LICENSE file for details
 Pull requests are welcome! For major changes, please open an issue first to discuss what you’d like to change.
 
 ## 📬 Contact
-For feedback, bugs, or feature requests:
-GitHub: @ShashankGupta10
-Email: shashankgupta9248@gmail.com
+
+**For feedback, bugs, or feature requests:**
+
+- 🐙 GitHub: [@ShashankGupta10](https://github.com/ShashankGupta10)  
+- 📧 Email: [shashankgupta9248@gmail.com](mailto:shashankgupta9248@gmail.com)
+
+---
+
+Made with ❤️ by **Shashank Gupta**
