@@ -341,13 +341,14 @@ func (s *deployService) setPublicAccessPolicy(svc *s3.Client, bucket string) err
 }
 
 func (s *deployService) uploadFiles(svc *s3.Client, dir, bucket string, buildDir string) (string, error) {
+	deployableFilesDepth := len(strings.Split(buildDir, "/")) + 2 // +2 because of ./projects/PROJECT_NAME
 	files, err := utils.GetFilePaths(dir, buildDir)
 	if err != nil {
 		return "", fmt.Errorf("failed to get file paths: %v", err)
 	}
 
 	for _, path := range files {
-		err := s.uploadFile(svc, path, bucket)
+		err := s.uploadFile(svc, path, bucket, deployableFilesDepth)
 		if err != nil {
 			return "", err
 		}
@@ -357,7 +358,7 @@ func (s *deployService) uploadFiles(svc *s3.Client, dir, bucket string, buildDir
 	return staticSiteURL, nil
 }
 
-func (s *deployService) uploadFile(svc *s3.Client, path, bucket string) error {
+func (s *deployService) uploadFile(svc *s3.Client, path, bucket string, deployableFilesDepth int) error {
 	file, err := os.Open(path)
 	if err != nil {
 		return fmt.Errorf("failed to open file %s: %v", path, err)
@@ -365,7 +366,7 @@ func (s *deployService) uploadFile(svc *s3.Client, path, bucket string) error {
 	defer file.Close()
 
 	contentType := s.getContentType(path)
-	key := strings.Join(strings.Split(path, string(os.PathSeparator))[3:], "/")
+	key := strings.Join(strings.Split(path, string(os.PathSeparator))[deployableFilesDepth: ], "/")
 
 	_, err = svc.PutObject(context.TODO(), &s3.PutObjectInput{
 		Bucket:      aws.String(bucket),
