@@ -89,7 +89,8 @@ func (s *deployService) BuildRepo() {
 
 		if err := s.buildProject(dir, buildRequest.InstallCommand, buildRequest.BuildCommand); err != nil {
 			fmt.Printf("Error building project: %v\n", err)
-			s.db.UpdateStatus(buildRequest.ProjectID, domain.Failed, "Error building react project")
+			s.CleanupLocalFiles(proj)
+			s.db.UpdateStatus(buildRequest.ProjectID, domain.Failed, err.Error())
 			s.DeleteProject(buildRequest.ProjectID)
 			continue
 		}
@@ -106,29 +107,42 @@ func (s *deployService) BuildRepo() {
 
 // Add this method to build the project
 func (s *deployService) buildProject(dir string, installCommand string, buildCommand string) error {
-	// Install dependencies
+	// Install dependencies with timeout
 	installArgs := strings.Fields(installCommand)
 	if len(installArgs) == 0 {
 		return fmt.Errorf("invalid install command: %s", installCommand)
 	}
 	fmt.Println("Installing Dependencies...")
 
-	installCmd := exec.Command(installArgs[0], installArgs[1:]...)
+	installCtx, cancelInstall := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancelInstall()
+
+	installCmd := exec.CommandContext(installCtx, installArgs[0], installArgs[1:]...)
 	installCmd.Dir = dir
 	if output, err := installCmd.CombinedOutput(); err != nil {
+		if installCtx.Err() == context.DeadlineExceeded {
+			return fmt.Errorf("install command timed out after 60 seconds")
+		}
 		return fmt.Errorf("failed to install dependencies: %s, error: %v", string(output), err)
 	}
 
+	// Build project with timeout
 	buildArgs := strings.Fields(buildCommand)
 	if len(buildArgs) == 0 {
 		return fmt.Errorf("invalid build command: %s", buildCommand)
 	}
 	fmt.Println("Creating build...")
-	buildCmd := exec.Command(buildArgs[0], buildArgs[1:]...)
+
+	buildCtx, cancelBuild := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancelBuild()
+
+	buildCmd := exec.CommandContext(buildCtx, buildArgs[0], buildArgs[1:]...)
 	buildCmd.Dir = dir
 	if output, err := buildCmd.CombinedOutput(); err != nil {
+		if buildCtx.Err() == context.DeadlineExceeded {
+			return fmt.Errorf("build command timed out after 60 seconds")
+		}
 		return fmt.Errorf("failed to build project: %s, error: %v", string(output), err)
-
 	}
 
 	return nil
@@ -190,16 +204,15 @@ func (s *deployService) StartCleanupTicker() {
 	go func() {
 		for {
 			<-ticker.C
-			s.cleanupOldDeployments()
+			s.CleanupOldDeployments()
 		}
 	}()
 }
 
-func (s *deployService) cleanupOldDeployments() {
+func (s *deployService) CleanupOldDeployments() error {
 	now := time.Now()
 	for projectName, deployTime := range s.deployedProjects {
-		if now.Sub(deployTime) > 1*time.Hour {
-			// Get the project
+		if now.Sub(deployTime) > 1 * time.Hour {
 			project, err := s.db.GetProjectByName(projectName)
 			if err != nil {
 				fmt.Printf("Error getting project %s: %v\n", projectName, err)
@@ -215,6 +228,7 @@ func (s *deployService) cleanupOldDeployments() {
 			}
 		}
 	}
+	return nil
 }
 
 func (s *deployService) deployProject(project *domain.Project, buildDir string) error {

@@ -45,6 +45,7 @@ func main() {
 	e.POST("/deploy", h.DeployHandler)
 	e.GET("/project/:id", h.ProjectStatusHandler)
 	e.DELETE("/project/:id", h.DeleteProjectHandler)
+	e.POST("/cleanup", h.CleanupHandler)
 
 	e.Logger.Fatal(e.Start(fmt.Sprintf(":%d", cfg.ServerPort)))
 }

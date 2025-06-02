@@ -69,7 +69,7 @@ func (s *ApiHandler) DeployHandler(c echo.Context) error {
 	// Clone the repository
 	err = utils.CloneRepo(requestBody.RepoURL)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to clone repository"})
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to clone repository. Either the repository is private or the URL is incorrect."})
 	}
 
 	smallcaseName := strings.ToLower(projectName)
@@ -91,7 +91,7 @@ func (s *ApiHandler) DeployHandler(c echo.Context) error {
 	}
 
 	s.DeployService.QueueBuild(projectID, requestBody.InstallCommand, requestBody.BuildCommand, requestBody.BuildDir)
-	return c.JSON(http.StatusAccepted, map[string]interface{}{
+	return c.JSON(http.StatusAccepted, map[string]any{
 		"message": "Deployment queued",
 		"id":      projectID,
 	})
@@ -135,4 +135,19 @@ func (s *ApiHandler) DeleteProjectHandler(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, map[string]string{"message": "Project deleted successfully"})
+}
+
+func (s *ApiHandler) CleanupHandler(c echo.Context) error {
+	expectedSecret := config.LoadConfig().DeleteSecretPhrase
+	providedSecret := c.Request().Header.Get("X-Delete-Secret")
+
+	if providedSecret != expectedSecret {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "Unauthorized cleanup request"})
+	}
+
+	if err := s.DeployService.CleanupOldDeployments(); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Failed to cleanup old deployments"})
+	}
+
+	return c.JSON(http.StatusOK, map[string]string{"message": "Old deployments cleaned up successfully"})
 }

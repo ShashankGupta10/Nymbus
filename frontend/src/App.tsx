@@ -21,6 +21,7 @@ function App() {
   const [buildDir, setBuildDir] = useState("");
   const [status, setStatus] = useState<number | null>(null);
   const [deployUrl, setDeployUrl] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   const pollDeploymentStatus = async (deployId: string) => {
     const interval = setInterval(async () => {
@@ -40,9 +41,9 @@ function App() {
           setDeployUrl(result.deployed_url);
           if (result.status === 3 || result.status === 4)
             clearInterval(interval);
+            setError(result.error_message || null);
         }
       } catch (err) {
-        console.log(err);
         setStatus(4);
         clearInterval(interval);
       }
@@ -51,6 +52,7 @@ function App() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     setStatus(0);
     try {
       const response = await fetch(`${BACKEND_URL}/deploy`, {
@@ -65,10 +67,12 @@ function App() {
         }),
       });
       const result = await response.json();
+      console.log("RESULT", result)
       if (result.id) {
         pollDeploymentStatus(result.id); // Start polling for status
       } else {
         setStatus(4);
+        setError(result.error || "Deployment failed. Please check your inputs.");
       }
     } catch (err) {
       console.log(err);
@@ -216,9 +220,16 @@ function App() {
           {typeof status === "number" && (
             <div className={`mt-6 p-4 rounded-lg`}>
               <div className="flex items-center space-x-2">
-                <span className="font-medium  text-slate-100 flex gap-4 items-center justify-center mx-auto">
-                  {statusConfig.find((s) => s.status === status)?.icon}
-                  {statusConfig.find((s) => s.status === status)?.text}
+                <span className="font-medium text-slate-100 flex flex-col gap-2 items-center justify-center mx-auto">
+                  <div className="flex gap-1">
+                    {statusConfig.find((s) => s.status === status)?.icon}
+                    {statusConfig.find((s) => s.status === status)?.text}
+                  </div>
+                  {error && (
+                    <span className="text-red-500">
+                      {error}
+                    </span>
+                  )}
                 </span>
               </div>
                 <a
