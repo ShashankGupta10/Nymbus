@@ -114,7 +114,7 @@ func (s *deployService) buildProject(dir string, installCommand string, buildCom
 	}
 	fmt.Println("Installing Dependencies...")
 
-	installCtx, cancelInstall := context.WithTimeout(context.Background(), 60*time.Second)
+	installCtx, cancelInstall := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancelInstall()
 
 	installCmd := exec.CommandContext(installCtx, installArgs[0], installArgs[1:]...)
@@ -133,7 +133,7 @@ func (s *deployService) buildProject(dir string, installCommand string, buildCom
 	}
 	fmt.Println("Creating build...")
 
-	buildCtx, cancelBuild := context.WithTimeout(context.Background(), 60*time.Second)
+	buildCtx, cancelBuild := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancelBuild()
 
 	buildCmd := exec.CommandContext(buildCtx, buildArgs[0], buildArgs[1:]...)
